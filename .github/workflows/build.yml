@@ -1,0 +1,86 @@
+  
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  # BUILD APP
+  build_angular:
+    name: Build Angular
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Cache node modules
+        id: npm_cache
+        uses: actions/cache@preview
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - run: npm install
+        if: steps.npm_cache.outputs.cache-hit != 'true'
+      - run: npm run build
+      - name: Archive Production Artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: dist
+          path: dist
+  # BUILD ANDROID
+  build_android:
+    name: Build Android
+    needs: build_angular
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Download Artifact
+        uses: actions/download-artifact@master
+        with:
+          name: dist
+      - run: npm install @capacitor/cli
+      - run: npx cap copy
+      - name: Build Android APK
+        working-directory: ${{ github.workspace }}/android
+        run: ./gradlew build
+      - name: Build Android Bundle
+        working-directory: ${{ github.workspace }}/android
+        run: ./gradlew bundle
+      - name: Upload to Github Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')  # Release only if a tag is povided
+        with:
+          draft: true
+          files: |
+            android/app/build/outputs/apk/release/app-release-unsigned.apk
+            android/app/build/outputs/bundle/release/app.aab
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # BUILD ELECTRON
+  # build_electron:
+  #   name: Build Electron
+  #   needs: build_angular
+  #   runs-on: windows-latest
+  #   stpes:
+      # - name: Checkout Repo
+      #   uses: actions/checkout@master
+      # - name: Download Artifact
+      #   uses: actions/download-artifact@master
+      #   with:
+      #     name: dist
+      # - run: npm install @capacitor/cli
+      # - run: npx cap copy
+  #     - name: Build & Publish Electron
+  #       run: npm run electron:publish
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  #     Use Gradle with eskatos/gradle-command-action
+  #     - uses: eskatos/gradle-command-action@v1
+  #       with:
+  #         build-root-directory: ./android
+  #         arguments: build
