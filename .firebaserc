@@ -1,0 +1,11 @@
+{
+  "targets": {
+    "movinder-test": {
+      "hosting": {
+        "movinder": [
+          "movinder-test"
+        ]
+      }
+    }
+  }
+}

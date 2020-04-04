@@ -1,0 +1,8 @@
+{
+  "appId": "com.movinder_test.app",
+  "appName": "movinder",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "dist/movinder/browser",
+  "cordova": {}
+}
