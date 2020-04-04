@@ -12,7 +12,7 @@ jobs:
     name: Build Angular
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@latest
       - name: Cache node modules
         id: npm_cache
         uses: actions/cache@preview
@@ -23,7 +23,7 @@ jobs:
             ${{ runner.os }}-node-
       - run: npm install
         if: steps.npm_cache.outputs.cache-hit != 'true'
-      - run: npm run build
+      - run: npm run build:prod
       - name: Archive Production Artifact
         uses: actions/upload-artifact@master
         with:
@@ -42,23 +42,23 @@ jobs:
         with:
           name: dist
       - run: npm install @capacitor/cli
-      - run: npx cap copy
+      - run: npx cap sync
       - name: Build Android APK
         working-directory: ${{ github.workspace }}/android
         run: ./gradlew build
       - name: Build Android Bundle
         working-directory: ${{ github.workspace }}/android
         run: ./gradlew bundle
-      - name: Upload to Github Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')  # Release only if a tag is povided
-        with:
-          draft: true
-          files: |
-            android/app/build/outputs/apk/release/app-release-unsigned.apk
-            android/app/build/outputs/bundle/release/app.aab
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+          id: create_release
+          uses: actions/create-release@latest
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            tag_name: ${{ github.ref }}
+            release_name: Release ${{ github.ref }}
+            draft: false
+            prerelease: false
   # BUILD ELECTRON
   # build_electron:
   #   name: Build Electron
